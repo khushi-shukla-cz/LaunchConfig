@@ -1,0 +1,106 @@
+{
+  "name": "TaskFlow",
+  "description": "Config-driven project and task management",
+  "version": "1.0.0",
+  "configVersion": 1,
+  "environment": "development",
+
+  "resources": [
+    {
+      "name": "projects",
+      "label": "Project",
+      "pluralLabel": "Projects",
+      "icon": "database",
+      "softDelete": false,
+      "timestamps": true,
+      "searchable": ["name", "description"],
+      "fields": [
+        { "name": "name", "label": "Project Name", "type": "text", "required": true },
+        { "name": "description", "label": "Description", "type": "textarea" },
+        { "name": "status", "label": "Status", "type": "select", "options": ["planning", "active", "on-hold", "completed", "cancelled"], "defaultValue": "planning" },
+        { "name": "priority", "label": "Priority", "type": "select", "options": ["low", "medium", "high", "critical"], "defaultValue": "medium" },
+        { "name": "startDate", "label": "Start Date", "type": "date" },
+        { "name": "dueDate", "label": "Due Date", "type": "date" },
+        { "name": "budget", "label": "Budget ($)", "type": "number" },
+        { "name": "tags", "label": "Tags", "type": "multiselect", "options": ["frontend", "backend", "design", "marketing", "research"] },
+        { "name": "isPublic", "label": "Public", "type": "boolean", "defaultValue": false }
+      ]
+    },
+    {
+      "name": "tasks",
+      "label": "Task",
+      "pluralLabel": "Tasks",
+      "timestamps": true,
+      "softDelete": true,
+      "searchable": ["title", "description"],
+      "sortable": ["priority", "dueDate", "createdAt"],
+      "fields": [
+        { "name": "title", "label": "Title", "type": "text", "required": true, "validation": [{ "type": "min", "value": 3, "message": "Title must be at least 3 characters" }] },
+        { "name": "description", "label": "Description", "type": "textarea" },
+        { "name": "status", "label": "Status", "type": "select", "required": true, "options": ["todo", "in-progress", "review", "done", "blocked"], "defaultValue": "todo" },
+        { "name": "priority", "label": "Priority", "type": "select", "options": ["low", "medium", "high", "urgent"], "defaultValue": "medium" },
+        { "name": "assignee", "label": "Assignee Email", "type": "email" },
+        { "name": "dueDate", "label": "Due Date", "type": "date" },
+        { "name": "estimatedHours", "label": "Estimated Hours", "type": "number", "validation": [{ "type": "min", "value": 0 }] },
+        { "name": "tags", "label": "Tags", "type": "multiselect", "options": ["bug", "feature", "enhancement", "documentation", "testing"] },
+        { "name": "projectId", "label": "Project", "type": "relation", "relation": { "resource": "projects", "labelField": "name", "valueField": "id" } }
+      ]
+    },
+    {
+      "name": "team_members",
+      "label": "Team Member",
+      "pluralLabel": "Team Members",
+      "timestamps": true,
+      "fields": [
+        { "name": "name", "label": "Full Name", "type": "text", "required": true },
+        { "name": "email", "label": "Email", "type": "email", "required": true, "unique": true },
+        { "name": "role", "label": "Role", "type": "select", "options": ["developer", "designer", "manager", "qa", "devops"], "defaultValue": "developer" },
+        { "name": "department", "label": "Department", "type": "text" },
+        { "name": "skills", "label": "Skills", "type": "multiselect", "options": ["react", "node", "python", "design", "sql", "devops"] },
+        { "name": "availability", "label": "Availability (%)", "type": "number", "defaultValue": 100 },
+        { "name": "isActive", "label": "Active", "type": "boolean", "defaultValue": true }
+      ]
+    }
+  ],
+
+  "ui": {
+    "appName": "TaskFlow",
+    "layout": "sidebar",
+    "theme": { "primaryColor": "#0ea5e9", "mode": "light" },
+    "navigation": [
+      { "label": "Dashboard", "path": "/", "icon": "home" },
+      { "label": "Projects", "path": "/projects", "icon": "database" },
+      { "label": "Tasks", "path": "/tasks", "icon": "chart" },
+      { "label": "Team", "path": "/team_members", "icon": "users" }
+    ],
+    "pages": []
+  },
+
+  "auth": {
+    "enabled": true,
+    "providers": ["email"],
+    "allowRegistration": true,
+    "sessionDuration": 604800,
+    "passwordPolicy": { "minLength": 6 },
+    "roles": [
+      { "name": "member", "label": "Team Member", "permissions": [], "isDefault": true, "isAdmin": false },
+      { "name": "admin", "label": "Admin", "permissions": ["*"], "isDefault": false, "isAdmin": true }
+    ],
+    "redirectAfterLogin": "/"
+  },
+
+  "api": {
+    "prefix": "/api",
+    "version": "v1",
+    "rateLimit": { "enabled": true, "windowMs": 60000, "max": 300 },
+    "pagination": { "defaultLimit": 20, "maxLimit": 100 }
+  },
+
+  "database": { "provider": "postgresql", "migrationStrategy": "auto" },
+  "i18n": { "enabled": false, "defaultLocale": "en", "supportedLocales": ["en"], "fallbackLocale": "en", "translations": {} },
+
+  "features": [
+    { "name": "csv-import", "enabled": true, "config": {} },
+    { "name": "github-export", "enabled": true, "config": {} }
+  ]
+}
