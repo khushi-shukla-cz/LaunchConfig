@@ -1,0 +1,47 @@
+services:
+  # Backend API
+  - type: web
+    name: configruntime-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: configruntime-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        value: https://configruntime-frontend.onrender.com
+      - key: CONFIG_PATH
+        value: /app/config/app.config.json
+      - key: LOG_LEVEL
+        value: info
+    healthCheckPath: /health
+    disk:
+      name: config-volume
+      mountPath: /app/config
+      sizeGB: 1
+
+  # Frontend
+  - type: web
+    name: configruntime-frontend
+    runtime: docker
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: .
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_API_URL
+        value: https://configruntime-backend.onrender.com
+
+databases:
+  - name: configruntime-db
+    databaseName: configruntime
+    user: configruntime
+    plan: free
