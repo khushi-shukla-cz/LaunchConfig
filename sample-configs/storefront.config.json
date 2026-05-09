@@ -1,0 +1,129 @@
+{
+  "name": "StoreFront Inventory",
+  "description": "E-commerce product and order management",
+  "version": "1.0.0",
+  "configVersion": 1,
+  "environment": "development",
+
+  "resources": [
+    {
+      "name": "products",
+      "label": "Product",
+      "pluralLabel": "Products",
+      "icon": "database",
+      "softDelete": false,
+      "timestamps": true,
+      "searchable": ["name", "sku", "category"],
+      "sortable": ["price", "stock", "createdAt"],
+      "filterable": ["category", "status"],
+      "fields": [
+        { "name": "name", "label": "Product Name", "type": "text", "required": true },
+        { "name": "sku", "label": "SKU", "type": "text", "required": true, "unique": true },
+        { "name": "description", "label": "Description", "type": "textarea" },
+        { "name": "price", "label": "Price ($)", "type": "number", "required": true, "validation": [{ "type": "min", "value": 0 }] },
+        { "name": "comparePrice", "label": "Compare at Price ($)", "type": "number" },
+        { "name": "stock", "label": "Stock Quantity", "type": "number", "required": true, "defaultValue": 0 },
+        { "name": "category", "label": "Category", "type": "select", "options": ["electronics", "clothing", "food", "books", "home", "sports", "other"] },
+        { "name": "status", "label": "Status", "type": "select", "options": ["active", "draft", "archived"], "defaultValue": "draft" },
+        { "name": "weight", "label": "Weight (kg)", "type": "number" },
+        { "name": "tags", "label": "Tags", "type": "multiselect", "options": ["new", "sale", "featured", "bestseller", "limited"] },
+        { "name": "imageUrl", "label": "Image URL", "type": "text", "validation": [{ "type": "url", "message": "Must be a valid URL" }] },
+        { "name": "isDigital", "label": "Digital Product", "type": "boolean", "defaultValue": false },
+        { "name": "metadata", "label": "Custom Attributes", "type": "json", "defaultValue": {} }
+      ]
+    },
+    {
+      "name": "orders",
+      "label": "Order",
+      "pluralLabel": "Orders",
+      "timestamps": true,
+      "softDelete": false,
+      "searchable": ["orderNumber", "customerEmail"],
+      "sortable": ["total", "createdAt"],
+      "fields": [
+        { "name": "orderNumber", "label": "Order #", "type": "text", "required": true, "readonly": true },
+        { "name": "customerEmail", "label": "Customer Email", "type": "email", "required": true },
+        { "name": "customerName", "label": "Customer Name", "type": "text", "required": true },
+        { "name": "status", "label": "Status", "type": "select", "required": true, "options": ["pending", "processing", "shipped", "delivered", "cancelled", "refunded"], "defaultValue": "pending" },
+        { "name": "paymentStatus", "label": "Payment", "type": "select", "options": ["unpaid", "paid", "refunded", "failed"], "defaultValue": "unpaid" },
+        { "name": "subtotal", "label": "Subtotal ($)", "type": "number", "required": true },
+        { "name": "tax", "label": "Tax ($)", "type": "number", "defaultValue": 0 },
+        { "name": "shipping", "label": "Shipping ($)", "type": "number", "defaultValue": 0 },
+        { "name": "total", "label": "Total ($)", "type": "number", "required": true },
+        { "name": "shippingAddress", "label": "Shipping Address", "type": "json" },
+        { "name": "notes", "label": "Notes", "type": "textarea" }
+      ],
+      "permissions": {
+        "create": ["admin"],
+        "read": true,
+        "update": ["admin"],
+        "delete": false
+      }
+    },
+    {
+      "name": "categories",
+      "label": "Category",
+      "pluralLabel": "Categories",
+      "timestamps": true,
+      "fields": [
+        { "name": "name", "label": "Name", "type": "text", "required": true },
+        { "name": "slug", "label": "Slug", "type": "text", "required": true, "unique": true },
+        { "name": "description", "label": "Description", "type": "textarea" },
+        { "name": "imageUrl", "label": "Image URL", "type": "text" },
+        { "name": "isActive", "label": "Active", "type": "boolean", "defaultValue": true },
+        { "name": "sortOrder", "label": "Sort Order", "type": "number", "defaultValue": 0 }
+      ]
+    }
+  ],
+
+  "ui": {
+    "appName": "StoreFront",
+    "layout": "sidebar",
+    "theme": { "primaryColor": "#10b981", "mode": "light", "borderRadius": "0.5rem" },
+    "navigation": [
+      { "label": "Dashboard", "path": "/", "icon": "home" },
+      { "label": "Products", "path": "/products", "icon": "database" },
+      { "label": "Orders", "path": "/orders", "icon": "chart" },
+      { "label": "Categories", "path": "/categories", "icon": "settings" }
+    ],
+    "pages": []
+  },
+
+  "auth": {
+    "enabled": true,
+    "providers": ["email", "otp"],
+    "allowRegistration": false,
+    "sessionDuration": 28800,
+    "passwordPolicy": { "minLength": 10, "requireUppercase": true, "requireNumbers": true },
+    "roles": [
+      { "name": "viewer", "label": "Viewer", "permissions": [], "isDefault": true, "isAdmin": false },
+      { "name": "admin", "label": "Admin", "permissions": ["*"], "isDefault": false, "isAdmin": true }
+    ],
+    "redirectAfterLogin": "/"
+  },
+
+  "api": {
+    "prefix": "/api",
+    "version": "v1",
+    "rateLimit": { "enabled": true, "windowMs": 60000, "max": 150 },
+    "pagination": { "defaultLimit": 20, "maxLimit": 50 }
+  },
+
+  "database": { "provider": "postgresql", "migrationStrategy": "auto" },
+  "i18n": {
+    "enabled": true,
+    "defaultLocale": "en",
+    "supportedLocales": ["en", "es"],
+    "fallbackLocale": "en",
+    "translations": {
+      "en": { "nav.products": "Products", "nav.orders": "Orders", "nav.categories": "Categories" },
+      "es": { "nav.products": "Productos", "nav.orders": "Pedidos", "nav.categories": "Categorías" }
+    }
+  },
+
+  "features": [
+    { "name": "csv-import", "enabled": true, "config": { "maxRows": 5000 } },
+    { "name": "i18n", "enabled": true, "config": {} },
+    { "name": "github-export", "enabled": true, "config": {} }
+  ]
+}
