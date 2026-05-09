@@ -1,0 +1,155 @@
+// This is the BASE Prisma schema.
+// Resource-specific models are GENERATED at runtime via schema-adapter.ts
+// Run: npx prisma migrate dev --name init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Core system tables (always present) ─────────────────────────────────────
+
+model User {
+  id                String    @id @default(uuid())
+  email             String    @unique
+  emailVerified     Boolean   @default(false)
+  passwordHash      String?
+  name              String?
+  avatarUrl         String?
+  role              String    @default("user")
+  isActive          Boolean   @default(true)
+  metadata          Json      @default("{}")
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime?
+
+  sessions          Session[]
+  oauthAccounts     OAuthAccount[]
+  auditLogs         AuditLog[]
+
+  @@map("users")
+}
+
+model Session {
+  id          String    @id @default(uuid())
+  userId      String
+  token       String    @unique
+  expiresAt   DateTime
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+  @@map("sessions")
+}
+
+model OAuthAccount {
+  id             String   @id @default(uuid())
+  userId         String
+  provider       String
+  providerUserId String
+  accessToken    String?
+  refreshToken   String?
+  metadata       Json     @default("{}")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerUserId])
+  @@map("oauth_accounts")
+}
+
+model OtpCode {
+  id        String   @id @default(uuid())
+  email     String
+  code      String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@map("otp_codes")
+}
+
+// ── Config-driven dynamic resource storage ────────────────────────────────────
+// All user-defined resources use this generic EAV-style storage
+// The schema adapter generates typed views / migration scripts
+
+model DynamicRecord {
+  id          String    @id @default(uuid())
+  resourceName String
+  data        Json      @default("{}")
+  version     Int       @default(1)
+  createdBy   String?
+  updatedBy   String?
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([resourceName])
+  @@index([resourceName, createdAt])
+  @@map("dynamic_records")
+}
+
+// ── CSV Imports ───────────────────────────────────────────────────────────────
+
+model CsvImport {
+  id           String    @id @default(uuid())
+  resourceName String
+  fileName     String
+  status       String    @default("pending") // pending | processing | done | failed
+  totalRows    Int       @default(0)
+  successRows  Int       @default(0)
+  errorRows    Int       @default(0)
+  errors       Json      @default("[]")
+  rawData      Json?     // stored parsed rows for async processing
+  uploadedBy   String?
+  startedAt    DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@map("csv_imports")
+}
+
+// ── Audit Log ─────────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  userId       String?
+  action       String
+  resourceName String?
+  recordId     String?
+  diff         Json?
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+
+  user         User?    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([resourceName, recordId])
+  @@map("audit_logs")
+}
+
+// ── Config Store ──────────────────────────────────────────────────────────────
+
+model AppConfigStore {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       Json
+  version     Int      @default(1)
+  updatedBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("app_config_store")
+}
