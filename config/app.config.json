@@ -1,0 +1,139 @@
+{
+  "name": "Acme CRM",
+  "description": "Customer relationship management system",
+  "version": "1.0.0",
+  "configVersion": 1,
+  "environment": "development",
+
+  "resources": [
+    {
+      "name": "contacts",
+      "label": "Contact",
+      "pluralLabel": "Contacts",
+      "icon": "users",
+      "softDelete": true,
+      "timestamps": true,
+      "searchable": ["firstName", "lastName", "email"],
+      "sortable": ["firstName", "lastName", "createdAt"],
+      "filterable": ["status", "source"],
+      "displayField": "firstName",
+      "fields": [
+        { "name": "firstName", "label": "First Name", "type": "text", "required": true, "validation": [{ "type": "min", "value": 1 }] },
+        { "name": "lastName", "label": "Last Name", "type": "text", "required": true },
+        { "name": "email", "label": "Email", "type": "email", "required": true, "unique": true, "validation": [{ "type": "email" }] },
+        { "name": "phone", "label": "Phone", "type": "text", "placeholder": "+1 (555) 000-0000" },
+        { "name": "company", "label": "Company", "type": "text" },
+        { "name": "status", "label": "Status", "type": "select", "options": ["lead", "prospect", "customer", "churned"], "defaultValue": "lead" },
+        { "name": "source", "label": "Source", "type": "select", "options": ["website", "referral", "cold-outreach", "social", "other"] },
+        { "name": "notes", "label": "Notes", "type": "textarea" },
+        { "name": "isActive", "label": "Active", "type": "boolean", "defaultValue": true }
+      ],
+      "permissions": { "create": ["admin", "user"], "read": true, "update": ["admin", "user"], "delete": ["admin"] }
+    },
+    {
+      "name": "deals",
+      "label": "Deal",
+      "pluralLabel": "Deals",
+      "icon": "chart",
+      "timestamps": true,
+      "searchable": ["title"],
+      "sortable": ["value", "closeDate", "createdAt"],
+      "fields": [
+        { "name": "title", "label": "Deal Title", "type": "text", "required": true },
+        { "name": "value", "label": "Value ($)", "type": "number", "required": true, "validation": [{ "type": "min", "value": 0 }] },
+        { "name": "stage", "label": "Stage", "type": "select", "required": true, "options": ["discovery", "proposal", "negotiation", "won", "lost"], "defaultValue": "discovery" },
+        { "name": "probability", "label": "Probability (%)", "type": "number", "defaultValue": 50, "validation": [{ "type": "min", "value": 0 }, { "type": "max", "value": 100 }] },
+        { "name": "closeDate", "label": "Expected Close", "type": "date" },
+        { "name": "contactId", "label": "Contact", "type": "relation", "relation": { "resource": "contacts", "labelField": "firstName", "valueField": "id" } },
+        { "name": "notes", "label": "Notes", "type": "textarea" }
+      ]
+    },
+    {
+      "name": "activities",
+      "label": "Activity",
+      "pluralLabel": "Activities",
+      "timestamps": true,
+      "fields": [
+        { "name": "type", "label": "Type", "type": "select", "required": true, "options": ["call", "email", "meeting", "note", "task"] },
+        { "name": "subject", "label": "Subject", "type": "text", "required": true },
+        { "name": "description", "label": "Description", "type": "textarea" },
+        { "name": "dueDate", "label": "Due Date", "type": "datetime" },
+        { "name": "completed", "label": "Completed", "type": "boolean", "defaultValue": false },
+        { "name": "contactId", "label": "Contact", "type": "relation", "relation": { "resource": "contacts", "labelField": "firstName", "valueField": "id" } }
+      ]
+    }
+  ],
+
+  "ui": {
+    "appName": "Acme CRM",
+    "layout": "sidebar",
+    "theme": {
+      "primaryColor": "#6366f1",
+      "mode": "light",
+      "borderRadius": "0.75rem"
+    },
+    "navigation": [
+      { "label": "Dashboard", "path": "/", "icon": "home" },
+      { "label": "Contacts", "path": "/contacts", "icon": "users" },
+      { "label": "Deals", "path": "/deals", "icon": "chart" },
+      { "label": "Activities", "path": "/activities", "icon": "database" }
+    ],
+    "pages": []
+  },
+
+  "auth": {
+    "enabled": true,
+    "providers": ["email", "otp"],
+    "allowRegistration": true,
+    "requireEmailVerification": false,
+    "sessionDuration": 86400,
+    "passwordPolicy": { "minLength": 8, "requireUppercase": false, "requireNumbers": false, "requireSymbols": false },
+    "roles": [
+      { "name": "user", "label": "Sales Rep", "permissions": [], "isDefault": true, "isAdmin": false },
+      { "name": "admin", "label": "Sales Manager", "permissions": ["*"], "isDefault": false, "isAdmin": true }
+    ],
+    "redirectAfterLogin": "/"
+  },
+
+  "api": {
+    "prefix": "/api",
+    "version": "v1",
+    "rateLimit": { "enabled": true, "windowMs": 60000, "max": 200 },
+    "pagination": { "defaultLimit": 25, "maxLimit": 100 }
+  },
+
+  "database": { "provider": "postgresql", "migrationStrategy": "auto" },
+
+  "i18n": {
+    "enabled": true,
+    "defaultLocale": "en",
+    "supportedLocales": ["en", "es", "fr"],
+    "fallbackLocale": "en",
+    "translations": {
+      "en": {
+        "nav.dashboard": "Dashboard",
+        "nav.contacts": "Contacts",
+        "nav.deals": "Deals",
+        "nav.activities": "Activities"
+      },
+      "es": {
+        "nav.dashboard": "Panel",
+        "nav.contacts": "Contactos",
+        "nav.deals": "Negocios",
+        "nav.activities": "Actividades"
+      },
+      "fr": {
+        "nav.dashboard": "Tableau de bord",
+        "nav.contacts": "Contacts",
+        "nav.deals": "Affaires",
+        "nav.activities": "Activités"
+      }
+    }
+  },
+
+  "features": [
+    { "name": "csv-import", "enabled": true, "config": {} },
+    { "name": "i18n", "enabled": true, "config": {} },
+    { "name": "github-export", "enabled": true, "config": {} }
+  ]
+}
